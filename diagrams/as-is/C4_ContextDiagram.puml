@@ -1,0 +1,18 @@
+@startuml
+!include  https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+title SmartHome - Context Diagram (AS-IS)
+
+Person(user, "Пользователь", "Управляет отоплением и просматривает текущую температуру через веб-интерфейс")
+
+System(monolith, "SmartHome Monolith", "Go", "Монолитное приложение для управления сенсорами и получения температуры")
+
+System_Ext(tempApi, "Temperature API", "HTTP", "Внешний сервис, предоставляющий актуальные значения температуры")
+
+SystemDb(postgres, "PostgreSQL", "Database", "Хранение метаданных сенсоров и их текущего состояния")
+
+Rel(user, monolith, "Использует", "HTTP")
+Rel(monolith, postgres, "Читает/записывает данные", "SQL")
+Rel(monolith, tempApi, "Запрашивает текущую температуру", "HTTP")
+
+@enduml

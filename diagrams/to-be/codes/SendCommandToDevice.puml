@@ -1,0 +1,25 @@
+@startuml
+title Send Command to Device - Code Diagram
+
+actor User
+
+participant "Device API Controller" as Api
+participant "Device Application Service" as AppService
+participant "Device Repository" as Repository
+participant "Device Aggregate" as Device
+participant "Device Gateway" as Gateway
+participant "Event Publisher" as Publisher
+
+User -> Api : POST /devices/{id}/commands
+Api -> AppService : sendCommand(id, command)
+
+AppService -> Repository : findById(id)
+Repository --> AppService : Device
+
+AppService -> Device : execute(command)
+Device --> AppService : statusUpdated
+
+AppService -> Gateway : sendToPhysicalDevice()
+AppService -> Publisher : publish(DeviceStatusUpdated)
+
+@enduml

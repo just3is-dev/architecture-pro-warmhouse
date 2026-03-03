@@ -1,0 +1,17 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+title SmartHome Ecosystem - Context Diagram (TO-BE)
+
+Person(user, "Пользователь", "Использует SaaS-платформу для управления умным домом")
+
+System(system, "SmartHome Ecosystem", "SaaS Platform", "Платформа управления домами, модулями и устройствами")
+
+System_Ext(devices, "Partner Devices", "IoT Devices", "Устройства партнеров: отопление, свет, камеры, ворота")
+System_Ext(payment, "Payment Provider", "External Payment System", "Внешняя платежная система")
+
+Rel(user, system, "Использует", "HTTPS")
+Rel(system, devices, "Управляет и получает телеметрию", "IoT Protocols")
+Rel(system, payment, "Обрабатывает платежи", "HTTPS")
+
+@enduml

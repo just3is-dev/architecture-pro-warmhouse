@@ -1,0 +1,203 @@
+asyncapi: 2.6.0
+info:
+  title: Device Management Service Events
+  version: 1.0.0
+  description: >
+    Асинхронные события, публикуемые Device Management Service.
+    Используются для интеграции с другими микросервисами.
+
+servers:
+  messageBroker:
+    url: kafka:9092
+    protocol: kafka
+    description: Message broker for inter-service communication
+
+channels:
+
+  device.registered:
+    description: Устройство зарегистрировано в системе
+    publish:
+      summary: DeviceRegistered event
+      message:
+        name: DeviceRegistered
+        payload:
+          $ref: '#/components/schemas/DeviceRegistered'
+
+  device.assigned:
+    description: Устройство привязано к дому
+    publish:
+      summary: DeviceAssignedToHouse event
+      message:
+        name: DeviceAssignedToHouse
+        payload:
+          $ref: '#/components/schemas/DeviceAssignedToHouse'
+
+  device.status.changed:
+    description: Изменился статус устройства
+    publish:
+      summary: DeviceStatusChanged event
+      message:
+        name: DeviceStatusChanged
+        payload:
+          $ref: '#/components/schemas/DeviceStatusChanged'
+
+  device.command.sent:
+    description: Команда успешно отправлена устройству
+    publish:
+      summary: DeviceCommandSent event
+      message:
+        name: DeviceCommandSent
+        payload:
+          $ref: '#/components/schemas/DeviceCommandSent'
+
+  device.command.failed:
+    description: Ошибка при выполнении команды устройству
+    publish:
+      summary: DeviceCommandFailed event
+      message:
+        name: DeviceCommandFailed
+        payload:
+          $ref: '#/components/schemas/DeviceCommandFailed'
+
+components:
+  schemas:
+
+    DeviceRegistered:
+      type: object
+      properties:
+        eventId:
+          type: string
+          format: uuid
+        deviceId:
+          type: string
+          format: uuid
+        serialNumber:
+          type: string
+        deviceType:
+          type: string
+        registeredAt:
+          type: string
+          format: date-time
+      required:
+        - eventId
+        - deviceId
+        - serialNumber
+        - deviceType
+        - registeredAt
+      example:
+        eventId: "111e4567-e89b-12d3-a456-426614174000"
+        deviceId: "123e4567-e89b-12d3-a456-426614174000"
+        serialNumber: "SN-001-ABC"
+        deviceType: "TemperatureSensor"
+        registeredAt: "2025-03-02T10:00:00Z"
+
+    DeviceAssignedToHouse:
+      type: object
+      properties:
+        eventId:
+          type: string
+          format: uuid
+        deviceId:
+          type: string
+          format: uuid
+        houseId:
+          type: string
+          format: uuid
+        assignedAt:
+          type: string
+          format: date-time
+      required:
+        - eventId
+        - deviceId
+        - houseId
+        - assignedAt
+      example:
+        eventId: "222e4567-e89b-12d3-a456-426614174000"
+        deviceId: "123e4567-e89b-12d3-a456-426614174000"
+        houseId: "987e6543-e21b-12d3-a456-426614174999"
+        assignedAt: "2025-03-02T10:05:00Z"
+
+    DeviceStatusChanged:
+      type: object
+      properties:
+        eventId:
+          type: string
+          format: uuid
+        deviceId:
+          type: string
+          format: uuid
+        oldStatus:
+          type: string
+          enum: [online, offline, fault]
+        newStatus:
+          type: string
+          enum: [online, offline, fault]
+        changedAt:
+          type: string
+          format: date-time
+      required:
+        - eventId
+        - deviceId
+        - oldStatus
+        - newStatus
+        - changedAt
+      example:
+        eventId: "333e4567-e89b-12d3-a456-426614174000"
+        deviceId: "123e4567-e89b-12d3-a456-426614174000"
+        oldStatus: "offline"
+        newStatus: "online"
+        changedAt: "2025-03-02T10:10:00Z"
+
+    DeviceCommandSent:
+      type: object
+      properties:
+        eventId:
+          type: string
+          format: uuid
+        deviceId:
+          type: string
+          format: uuid
+        command:
+          type: string
+        sentAt:
+          type: string
+          format: date-time
+      required:
+        - eventId
+        - deviceId
+        - command
+        - sentAt
+      example:
+        eventId: "444e4567-e89b-12d3-a456-426614174000"
+        deviceId: "123e4567-e89b-12d3-a456-426614174000"
+        command: "TURN_ON"
+        sentAt: "2025-03-02T10:15:00Z"
+
+    DeviceCommandFailed:
+      type: object
+      properties:
+        eventId:
+          type: string
+          format: uuid
+        deviceId:
+          type: string
+          format: uuid
+        command:
+          type: string
+        errorMessage:
+          type: string
+        failedAt:
+          type: string
+          format: date-time
+      required:
+        - eventId
+        - deviceId
+        - command
+        - errorMessage
+        - failedAt
+      example:
+        eventId: "555e4567-e89b-12d3-a456-426614174000"
+        deviceId: "123e4567-e89b-12d3-a456-426614174000"
+        command: "TURN_ON"
+        errorMessage: "Device unreachable"
+        failedAt: "2025-03-02T10:16:00Z"

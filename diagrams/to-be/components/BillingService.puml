@@ -1,0 +1,19 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title Billing Service - Component Diagram
+
+Container_Boundary(billingService, "Billing Service", "Управление подписками и оплатой") {
+    Component(api, "Billing API Controller", "REST Controller", "Принимает запросы на управление подписками")
+    Component(appService, "Billing Application Service", "Application Layer", "Управляет подписками и оплатами")
+    Component(domain, "Subscription Aggregate", "Domain Layer", "Содержит бизнес-логику подписки")
+    Component(repository, "Subscription Repository", "Persistence Layer", "Хранит данные о подписках")
+    Component(paymentClient, "Payment Client", "Integration Layer", "Интеграция с внешней платёжной системой")
+}
+
+Rel(api, appService, "Calls")
+Rel(appService, domain, "Uses")
+Rel(appService, repository, "Reads/Writes")
+Rel(appService, paymentClient, "Calls external API")
+
+@enduml

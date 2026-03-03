@@ -1,0 +1,27 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+skinparam linetype ortho
+title SmartHome Ecosystem - Container Diagram (Events)
+
+System_Boundary(system, "SmartHome Ecosystem") {
+
+  ' --- Publishers ---
+  Container(device, "Device Management Service", "Service", "")
+  Container(telemetry, "Telemetry Service", "Service", "")
+  Container(house, "House & Installed Module Service", "Service", "")
+
+  ' --- Broker ---
+  Container(messagebus, "Message Broker", "Event Bus", "")
+
+  ' --- Consumers ---
+  Container(automation, "Automation Service", "Service", "")
+  Container(billing, "Billing Service", "Service", "")
+}
+
+Rel_D(device, messagebus, "Pub")
+Rel_D(telemetry, messagebus, "Pub")
+Rel_D(house, messagebus, "Pub")
+Rel_D(messagebus, automation, "Sub")
+Rel_D(messagebus, billing, "Sub")
+
+@enduml

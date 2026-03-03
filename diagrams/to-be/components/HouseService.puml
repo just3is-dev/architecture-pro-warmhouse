@@ -1,0 +1,19 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title House & Installed Module Service - Component Diagram
+
+Container_Boundary(houseService, "House & Installed Module Service", "Управление домами и установленными модулями") {
+    Component(api, "House API Controller", "REST Controller", "Принимает запросы на управление домами и модулями")
+    Component(appService, "House Application Service", "Application Layer", "Обрабатывает сценарии добавления домов и установки модулей")
+    Component(domain, "House Aggregate", "Domain Layer", "Содержит бизнес-логику дома и установленных модулей")
+    Component(repository, "House Repository", "Persistence Layer", "Хранит дома и связи с модулями")
+    Component(eventPublisher, "Event Publisher", "Integration Layer", "Публикует события установки модулей")
+}
+
+Rel(api, appService, "Calls")
+Rel(appService, domain, "Uses")
+Rel(appService, repository, "Reads/Writes")
+Rel(appService, eventPublisher, "Publishes events")
+
+@enduml

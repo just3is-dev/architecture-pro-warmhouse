@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"strconv"
@@ -10,6 +11,8 @@ import (
 	"smarthome/db"
 	"smarthome/models"
 	"smarthome/services"
+
+	"encoding/json"
 
 	"github.com/gin-gonic/gin"
 )
@@ -44,29 +47,26 @@ func (h *SensorHandler) RegisterRoutes(router *gin.RouterGroup) {
 
 // GetSensors handles GET /api/v1/sensors
 func (h *SensorHandler) GetSensors(c *gin.Context) {
-	sensors, err := h.DB.GetSensors(context.Background())
+	resp, err := http.Get("http://device-service:8082/devices")
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch devices from device-service"})
+		return
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read response"})
 		return
 	}
 
-	// Update temperature sensors with real-time data from the external API
-	for i, sensor := range sensors {
-		if sensor.Type == models.Temperature {
-			tempData, err := h.TemperatureService.GetTemperatureByID(fmt.Sprintf("%d", sensor.ID))
-			if err == nil {
-				// Update sensor with real-time data
-				sensors[i].Value = tempData.Value
-				sensors[i].Status = tempData.Status
-				sensors[i].LastUpdated = tempData.Timestamp
-				log.Printf("Updated temperature data for sensor %d from external API", sensor.ID)
-			} else {
-				log.Printf("Failed to fetch temperature data for sensor %d: %v", sensor.ID, err)
-			}
-		}
+	var devices []interface{}
+	if err := json.Unmarshal(body, &devices); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid JSON from device-service"})
+		return
 	}
 
-	c.JSON(http.StatusOK, sensors)
+	c.JSON(http.StatusOK, devices)
 }
 
 // GetSensorByID handles GET /api/v1/sensors/:id
