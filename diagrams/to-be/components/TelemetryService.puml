@@ -1,0 +1,19 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title Telemetry Service - Component Diagram
+
+Container_Boundary(telemetryService, "Telemetry Service", "Сбор и хранение телеметрии") {
+    Component(api, "Telemetry API Controller", "REST Controller", "Предоставляет данные телеметрии для чтения")
+    Component(eventConsumer, "Event Consumer", "Integration Layer", "Принимает события от устройств")
+    Component(appService, "Telemetry Application Service", "Application Layer", "Обрабатывает входящие измерения")
+    Component(domain, "Telemetry Entity", "Domain Layer", "Представляет измерение устройства")
+    Component(repository, "Telemetry Repository", "Persistence Layer", "Хранит измерения в БД")
+}
+
+Rel(api, appService, "Calls")
+Rel(eventConsumer, appService, "Passes events")
+Rel(appService, domain, "Creates")
+Rel(appService, repository, "Writes")
+
+@enduml

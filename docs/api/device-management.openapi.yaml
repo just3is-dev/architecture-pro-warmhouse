@@ -1,0 +1,115 @@
+openapi: 3.0.3
+info:
+  title: Device Management API
+  version: 1.0.0
+  description: API для управления устройствами умного дома
+
+servers:
+  - url: http://localhost:8080
+    description: Local server
+
+paths:
+  /devices/{id}:
+    get:
+      summary: Получить устройство по ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '200':
+          description: Устройство найдено
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Device'
+              example:
+                id: "123e4567-e89b-12d3-a456-426614174000"
+                house_id: "987e6543-e21b-12d3-a456-426614174999"
+                type_id: "321e6543-e21b-12d3-a456-426614170000"
+                serial_number: "SN-001-ABC"
+                name: "Living Room Sensor"
+                status: "online"
+                created_at: "2025-03-01T10:00:00Z"
+        '404':
+          description: Устройство не найдено
+          content:
+            application/json:
+              example:
+                message: "Device not found"
+
+  /devices/{id}/commands:
+    post:
+      summary: Отправить команду устройству
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeviceCommand'
+            example:
+              command: "TURN_ON"
+      responses:
+        '202':
+          description: Команда принята
+          content:
+            application/json:
+              example:
+                status: "accepted"
+                device_id: "123e4567-e89b-12d3-a456-426614174000"
+        '400':
+          description: Некорректная команда
+          content:
+            application/json:
+              example:
+                message: "Invalid command"
+        '404':
+          description: Устройство не найдено
+          content:
+            application/json:
+              example:
+                message: "Device not found"
+
+components:
+  schemas:
+    Device:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        house_id:
+          type: string
+          format: uuid
+        type_id:
+          type: string
+          format: uuid
+        serial_number:
+          type: string
+        name:
+          type: string
+        status:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+    DeviceCommand:
+      type: object
+      properties:
+        command:
+          type: string
+      required:
+        - command

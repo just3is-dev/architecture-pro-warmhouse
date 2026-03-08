@@ -1,0 +1,103 @@
+@startuml
+title SmartHome Ecosystem - ER Diagram
+
+entity User {
+  *id: UUID <<PK>>
+  --
+  email: string
+  password_hash: string
+  role: string
+  created_at: datetime
+}
+
+entity House {
+  *id: UUID <<PK>>
+  --
+  *owner_id: UUID <<FK>>
+  name: string
+  location: string
+  created_at: datetime
+}
+
+entity Module {
+  *id: UUID <<PK>>
+  --
+  name: string
+  description: string
+  price: decimal
+}
+
+entity InstalledModule {
+  *id: UUID <<PK>>
+  --
+  *house_id: UUID <<FK>>
+  *module_id: UUID <<FK>>
+  status: string
+  installed_at: datetime
+}
+
+entity DeviceType {
+  *id: UUID <<PK>>
+  --
+  name: string
+  category: string
+}
+
+entity Device {
+  *id: UUID <<PK>>
+  --
+  *house_id: UUID <<FK>>
+  *type_id: UUID <<FK>>
+  serial_number: string <<UNIQUE>>
+  name: string
+  status: string
+  created_at: datetime
+}
+
+entity Telemetry {
+  *id: UUID <<PK>>
+  --
+  *device_id: UUID <<FK>>
+  metric_type: string
+  value: decimal
+  recorded_at: datetime
+}
+
+entity Scenario {
+  *id: UUID <<PK>>
+  --
+  *house_id: UUID <<FK>>
+  name: string
+  is_active: boolean
+}
+
+entity ScenarioRule {
+  *id: UUID <<PK>>
+  --
+  *scenario_id: UUID <<FK>>
+  condition: string
+  action: string
+}
+
+entity Subscription {
+  *id: UUID <<PK>>
+  --
+  *house_id: UUID <<FK>>
+  plan_name: string
+  status: string
+  valid_until: datetime
+}
+
+' ---------------- Relationships ----------------
+
+User ||--o{ House
+House ||--o{ InstalledModule
+Module ||--o{ InstalledModule
+House ||--o{ Device
+DeviceType ||--o{ Device
+Device ||--o{ Telemetry
+House ||--o{ Scenario
+Scenario ||--o{ ScenarioRule
+House ||--o{ Subscription
+
+@enduml

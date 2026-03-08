@@ -1,14 +1,11 @@
 package handlers
 
 import (
-	"context"
+	"bytes"
 	"fmt"
-	"log"
+	"io"
 	"net/http"
-	"strconv"
 
-	"smarthome/db"
-	"smarthome/models"
 	"smarthome/services"
 
 	"github.com/gin-gonic/gin"
@@ -16,14 +13,12 @@ import (
 
 // SensorHandler handles sensor-related requests
 type SensorHandler struct {
-	DB                 *db.DB
 	TemperatureService *services.TemperatureService
 }
 
 // NewSensorHandler creates a new SensorHandler
-func NewSensorHandler(db *db.DB, temperatureService *services.TemperatureService) *SensorHandler {
+func NewSensorHandler(temperatureService *services.TemperatureService) *SensorHandler {
 	return &SensorHandler{
-		DB:                 db,
 		TemperatureService: temperatureService,
 	}
 }
@@ -42,73 +37,147 @@ func (h *SensorHandler) RegisterRoutes(router *gin.RouterGroup) {
 	}
 }
 
-// GetSensors handles GET /api/v1/sensors
+// GET /api/v1/sensors
 func (h *SensorHandler) GetSensors(c *gin.Context) {
-	sensors, err := h.DB.GetSensors(context.Background())
+	resp, err := http.Get("http://device-service:8082/devices")
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch devices"})
 		return
 	}
+	defer resp.Body.Close()
 
-	// Update temperature sensors with real-time data from the external API
-	for i, sensor := range sensors {
-		if sensor.Type == models.Temperature {
-			tempData, err := h.TemperatureService.GetTemperatureByID(fmt.Sprintf("%d", sensor.ID))
-			if err == nil {
-				// Update sensor with real-time data
-				sensors[i].Value = tempData.Value
-				sensors[i].Status = tempData.Status
-				sensors[i].LastUpdated = tempData.Timestamp
-				log.Printf("Updated temperature data for sensor %d from external API", sensor.ID)
-			} else {
-				log.Printf("Failed to fetch temperature data for sensor %d: %v", sensor.ID, err)
-			}
-		}
-	}
-
-	c.JSON(http.StatusOK, sensors)
+	body, _ := io.ReadAll(resp.Body)
+	c.Data(resp.StatusCode, "application/json", body)
 }
 
-// GetSensorByID handles GET /api/v1/sensors/:id
+// GET /api/v1/sensors/:id
 func (h *SensorHandler) GetSensorByID(c *gin.Context) {
-	id, err := strconv.Atoi(c.Param("id"))
+	id := c.Param("id")
+
+	resp, err := http.Get("http://device-service:8082/devices/" + id)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid sensor ID"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch device"})
 		return
 	}
+	defer resp.Body.Close()
 
-	sensor, err := h.DB.GetSensorByID(context.Background(), id)
-	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Sensor not found"})
-		return
-	}
-
-	// If this is a temperature sensor, fetch real-time data from the temperature API
-	if sensor.Type == models.Temperature {
-		tempData, err := h.TemperatureService.GetTemperatureByID(fmt.Sprintf("%d", sensor.ID))
-		if err == nil {
-			// Update sensor with real-time data
-			sensor.Value = tempData.Value
-			sensor.Status = tempData.Status
-			sensor.LastUpdated = tempData.Timestamp
-			log.Printf("Updated temperature data for sensor %d from external API", sensor.ID)
-		} else {
-			log.Printf("Failed to fetch temperature data for sensor %d: %v", sensor.ID, err)
-		}
-	}
-
-	c.JSON(http.StatusOK, sensor)
+	body, _ := io.ReadAll(resp.Body)
+	c.Data(resp.StatusCode, "application/json", body)
 }
 
-// GetTemperatureByLocation handles GET /api/v1/sensors/temperature/:location
+// POST /api/v1/sensors
+func (h *SensorHandler) CreateSensor(c *gin.Context) {
+	body, _ := io.ReadAll(c.Request.Body)
+
+	resp, err := http.Post(
+		"http://device-service:8082/devices",
+		"application/json",
+		bytes.NewBuffer(body),
+	)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to call device-service"})
+		return
+	}
+
+	defer resp.Body.Close()
+	responseBody, _ := io.ReadAll(resp.Body)
+
+	c.Data(resp.StatusCode, "application/json", responseBody)
+}
+
+// PUT /api/v1/sensors/:id
+func (h *SensorHandler) UpdateSensor(c *gin.Context) {
+	id := c.Param("id")
+
+	body, _ := io.ReadAll(c.Request.Body)
+
+	req, _ := http.NewRequest(
+		http.MethodPut,
+		"http://device-service:8082/devices/"+id,
+		bytes.NewBuffer(body),
+	)
+
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to call device-service"})
+		return
+	}
+
+	defer resp.Body.Close()
+
+	responseBody, _ := io.ReadAll(resp.Body)
+
+	c.Data(resp.StatusCode, "application/json", responseBody)
+}
+
+// DELETE /api/v1/sensors/:id
+func (h *SensorHandler) DeleteSensor(c *gin.Context) {
+	id := c.Param("id")
+
+	req, _ := http.NewRequest(
+		http.MethodDelete,
+		"http://device-service:8082/devices/"+id,
+		nil,
+	)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to call device-service"})
+		return
+	}
+
+	defer resp.Body.Close()
+
+	body, _ := io.ReadAll(resp.Body)
+
+	c.Data(resp.StatusCode, "application/json", body)
+}
+
+// PATCH /api/v1/sensors/:id/value
+func (h *SensorHandler) UpdateSensorValue(c *gin.Context) {
+	id := c.Param("id")
+
+	body, _ := io.ReadAll(c.Request.Body)
+
+	req, _ := http.NewRequest(
+		http.MethodPatch,
+		"http://device-service:8082/devices/"+id+"/status",
+		bytes.NewBuffer(body),
+	)
+
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to call device-service"})
+		return
+	}
+
+	defer resp.Body.Close()
+
+	responseBody, _ := io.ReadAll(resp.Body)
+
+	c.Data(resp.StatusCode, "application/json", responseBody)
+}
+
+// GET /api/v1/sensors/temperature/:location
 func (h *SensorHandler) GetTemperatureByLocation(c *gin.Context) {
 	location := c.Param("location")
+
 	if location == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Location is required"})
 		return
 	}
 
-	// Fetch temperature data from the external API
 	tempData, err := h.TemperatureService.GetTemperature(location)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -117,97 +186,5 @@ func (h *SensorHandler) GetTemperatureByLocation(c *gin.Context) {
 		return
 	}
 
-	// Return the temperature data
-	c.JSON(http.StatusOK, gin.H{
-		"location":    tempData.Location,
-		"value":       tempData.Value,
-		"unit":        tempData.Unit,
-		"status":      tempData.Status,
-		"timestamp":   tempData.Timestamp,
-		"description": tempData.Description,
-	})
-}
-
-// CreateSensor handles POST /api/v1/sensors
-func (h *SensorHandler) CreateSensor(c *gin.Context) {
-	var sensorCreate models.SensorCreate
-	if err := c.ShouldBindJSON(&sensorCreate); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	sensor, err := h.DB.CreateSensor(context.Background(), sensorCreate)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusCreated, sensor)
-}
-
-// UpdateSensor handles PUT /api/v1/sensors/:id
-func (h *SensorHandler) UpdateSensor(c *gin.Context) {
-	id, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid sensor ID"})
-		return
-	}
-
-	var sensorUpdate models.SensorUpdate
-	if err := c.ShouldBindJSON(&sensorUpdate); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	sensor, err := h.DB.UpdateSensor(context.Background(), id, sensorUpdate)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, sensor)
-}
-
-// DeleteSensor handles DELETE /api/v1/sensors/:id
-func (h *SensorHandler) DeleteSensor(c *gin.Context) {
-	id, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid sensor ID"})
-		return
-	}
-
-	err = h.DB.DeleteSensor(context.Background(), id)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"message": "Sensor deleted successfully"})
-}
-
-// UpdateSensorValue handles PATCH /api/v1/sensors/:id/value
-func (h *SensorHandler) UpdateSensorValue(c *gin.Context) {
-	id, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid sensor ID"})
-		return
-	}
-
-	var request struct {
-		Value  float64 `json:"value" binding:"required"`
-		Status string  `json:"status" binding:"required"`
-	}
-
-	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	err = h.DB.UpdateSensorValue(context.Background(), id, request.Value, request.Status)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"message": "Sensor value updated successfully"})
+	c.JSON(http.StatusOK, tempData)
 }

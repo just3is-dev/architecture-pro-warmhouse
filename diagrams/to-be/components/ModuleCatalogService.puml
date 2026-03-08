@@ -1,0 +1,19 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title Module Catalog Service - Component Diagram
+
+Container_Boundary(catalogService, "Module Catalog Service", "Каталог модулей умного дома") {
+    Component(api, "Catalog API Controller", "REST Controller", "Принимает запросы на просмотр каталога модулей")
+    Component(appService, "Catalog Application Service", "Application Layer", "Обрабатывает сценарии поиска и получения деталей модуля")
+    Component(domain, "Module Catalog Model", "Domain Layer", "Содержит описание модулей, их состав и совместимость")
+    Component(repository, "Catalog Repository", "Persistence Layer", "Хранит данные каталога модулей")
+    Component(pricingProvider, "Pricing Provider", "Integration Layer", "Предоставляет цены и тарифы (опционально)")
+}
+
+Rel(api, appService, "Calls")
+Rel(appService, domain, "Uses")
+Rel(appService, repository, "Reads")
+Rel(appService, pricingProvider, "Gets price")
+
+@enduml

@@ -46,7 +46,7 @@ func main() {
 	apiRoutes := router.Group("/api/v1")
 
 	// Register sensor routes
-	sensorHandler := handlers.NewSensorHandler(database, temperatureService)
+	sensorHandler := handlers.NewSensorHandler(temperatureService)
 	sensorHandler.RegisterRoutes(apiRoutes)
 
 	// Start server

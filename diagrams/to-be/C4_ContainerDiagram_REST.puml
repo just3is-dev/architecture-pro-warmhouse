@@ -1,0 +1,55 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+skinparam linetype ortho
+title SmartHome Ecosystem - Container Diagram (REST)
+
+Person(user, "User", "Web client")
+
+System_Boundary(system, "SmartHome Ecosystem") {
+
+  Container(gateway, "API Gateway", "REST API", "Entry point")
+
+  ' --- Services ---
+  Container(useraccess, "User & Access Service", "Service", "")
+  Container(house, "House & Installed Module Service", "Service", "")
+  Container(device, "Device Management Service", "Service", "")
+  Container(telemetry, "Telemetry Service", "Service", "")
+  Container(automation, "Automation Service", "Service", "")
+  Container(billing, "Billing Service", "Service", "")
+  Container(catalog, "Module Catalog Service", "Service", "")
+
+  ' --- Databases ---
+  ContainerDb(userDb, "User DB", "DB", "")
+  ContainerDb(houseDb, "House DB", "DB", "")
+  ContainerDb(deviceDb, "Device DB", "DB", "")
+  ContainerDb(telemetryDb, "Telemetry DB", "DB", "")
+  ContainerDb(automationDb, "Automation DB", "DB", "")
+  ContainerDb(billingDb, "Billing DB", "DB", "")
+  ContainerDb(catalogDb, "Catalog DB", "DB", "")
+}
+
+System_Ext(devices, "Partner Devices", "IoT", "")
+System_Ext(payment, "Payment Provider", "External", "")
+
+Rel_D(user, gateway, "HTTPS")
+
+Rel_D(gateway, useraccess, "API")
+Rel_D(gateway, house, "API")
+Rel_D(gateway, device, "API")
+Rel_D(gateway, telemetry, "API")
+Rel_D(gateway, automation, "API")
+Rel_D(gateway, billing, "API")
+Rel_D(gateway, catalog, "API")
+
+Rel_R(device, devices, "IoT")
+Rel_R(billing, payment, "HTTPS")
+
+Rel_D(useraccess, userDb, "R/W")
+Rel_D(house, houseDb, "R/W")
+Rel_D(device, deviceDb, "R/W")
+Rel_D(telemetry, telemetryDb, "R/W")
+Rel_D(automation, automationDb, "R/W")
+Rel_D(billing, billingDb, "R/W")
+Rel_D(catalog, catalogDb, "R/W")
+
+@enduml

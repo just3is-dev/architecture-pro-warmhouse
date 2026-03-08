@@ -1,0 +1,19 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title User & Access Service - Component Diagram
+
+Container_Boundary(userService, "User & Access Service", "Управление пользователями и доступом") {
+    Component(api, "User API Controller", "REST Controller", "Принимает запросы на регистрацию и управление пользователями")
+    Component(appService, "User Application Service", "Application Layer", "Управляет пользователями и ролями")
+    Component(domain, "User Aggregate", "Domain Layer", "Содержит бизнес-логику пользователя")
+    Component(repository, "User Repository", "Persistence Layer", "Хранит пользователей и роли")
+    Component(authProvider, "Authentication Provider", "Security Component", "Генерирует и валидирует JWT токены")
+}
+
+Rel(api, appService, "Calls")
+Rel(appService, domain, "Uses")
+Rel(appService, repository, "Reads/Writes")
+Rel(appService, authProvider, "Delegates auth")
+
+@enduml

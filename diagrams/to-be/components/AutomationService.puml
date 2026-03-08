@@ -1,0 +1,23 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title Automation Service - Component Diagram
+
+Container_Boundary(automationService, "Automation Service", "Управление сценариями автоматизации") {
+    Component(api, "Automation API Controller", "REST Controller", "Принимает запросы на создание и управление сценариями")
+    Component(appService, "Automation Application Service", "Application Layer", "Оркестрирует выполнение сценариев")
+    Component(ruleEngine, "Rule Engine", "Domain Layer", "Оценивает условия и определяет действия")
+    Component(repository, "Automation Repository", "Persistence Layer", "Хранит сценарии и правила")
+    Component(eventSubscriber, "Event Subscriber", "Integration Layer", "Подписывается на события телеметрии")
+    Component(deviceClient, "Device Service Client", "Integration Layer", "Отправляет команды в Device Management Service")
+    Component(eventPublisher, "Event Publisher", "Integration Layer", "Публикует события о выполнении сценария")
+}
+
+Rel(api, appService, "Calls")
+Rel(appService, ruleEngine, "Uses")
+Rel(appService, repository, "Reads/Writes")
+Rel(eventSubscriber, ruleEngine, "Triggers evaluation")
+Rel(ruleEngine, deviceClient, "Executes actions")
+Rel(appService, eventPublisher, "Publishes events")
+
+@enduml

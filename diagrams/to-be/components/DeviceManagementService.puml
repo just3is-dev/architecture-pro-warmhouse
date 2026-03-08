@@ -1,0 +1,21 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title Device Management Service - Component Diagram
+
+Container_Boundary(deviceService, "Device Management Service", "Управление устройствами") {
+    Component(api, "Device API Controller", "REST Controller", "Принимает запросы на управление устройствами")
+    Component(appService, "Device Application Service", "Application Layer", "Обрабатывает команды регистрации и управления устройствами")
+    Component(domain, "Device Aggregate", "Domain Layer", "Содержит бизнес-логику устройства и его состояние")
+    Component(repository, "Device Repository", "Persistence Layer", "Хранит устройства и их состояние")
+    Component(eventPublisher, "Event Publisher", "Integration Layer", "Публикует события об изменении состояния устройства")
+    Component(deviceGateway, "Device Gateway", "Integration Layer", "Взаимодействует с физическими устройствами")
+}
+
+Rel(api, appService, "Calls")
+Rel(appService, domain, "Uses")
+Rel(appService, repository, "Reads/Writes")
+Rel(appService, eventPublisher, "Publishes events")
+Rel(appService, deviceGateway, "Sends commands")
+
+@enduml
